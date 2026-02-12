@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>مختبر المستقبل الذكي - 2026</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Cairo', sans-serif; scroll-behavior: smooth; }
+        .glass { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); }
+        .lab-card { transition: all 0.3s ease; }
+        .lab-card:hover { transform: translateY(-5px); box-shadow: 0 10px 20px rgba(0,0,0,0.1); }
+        .locked { filter: grayscale(1); cursor: not-allowed; opacity: 0.6; }
+        .btn-gradient { background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800 min-h-screen">
+
+    <!-- Auth Overlay -->
+    <div id="auth-overlay" class="fixed inset-0 z-50 flex items-center justify-center bg-blue-900 bg-opacity-90">
+        <div class="bg-white p-8 rounded-2xl shadow-2xl max-w-md w-full mx-4 text-center">
+            <h1 class="text-3xl font-bold text-blue-600 mb-4">مختبر المستقبل الذكي</h1>
+            <p class="text-gray-600 mb-6">مجمع السحن - رؤية 2026</p>
+            <input type="text" id="student-name-input" placeholder="أدخل اسمك الثلاثي" class="w-full p-3 border-2 border-blue-100 rounded-xl mb-4 text-center focus:border-blue-500 outline-none">
+            <button onclick="startJourney()" class="w-full btn-gradient text-white py-3 rounded-xl font-bold text-lg hover:opacity-90">دخول المختبر</button>
+            <div class="mt-6 text-xs text-gray-500">
+                <p>صاحبة المبادرة: نوره المالكي ومشاعل الشريف</p>
+                <p>المديرة: هله النفيعي</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Navigation -->
+    <nav class="sticky top-0 z-40 bg-white shadow-sm border-b px-6 py-4 flex justify-between items-center">
+        <div class="flex items-center gap-4">
+            <div class="bg-blue-600 text-white p-2 rounded-lg font-bold">L-2026</div>
+            <h2 class="text-xl font-bold text-blue-900">مختبر المستقبل</h2>
+        </div>
+        <div class="flex gap-6 items-center">
+            <span id="display-name" class="text-blue-600 font-bold"></span>
+            <button onclick="showDashboard()" class="text-gray-600 hover:text-blue-600">لوحة التحكم</button>
+            <button onclick="showCertificate()" id="cert-nav" class="hidden text-green-600 font-bold">الشهادة</button>
+        </div>
+    </nav>
+
+    <main class="max-w-6xl mx-auto p-6">
+        <!-- Dashboard Section -->
+        <section id="dashboard" class="hidden mb-12 animate-fade-in">
+            <h2 class="text-2xl font-bold mb-6">قياس الأثر والتقدم الدراسي</h2>
+            <div id="stats-grid" class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <!-- Progress cards injected here -->
+            </div>
+        </section>
+
+        <!-- Department Tabs -->
+        <div class="flex flex-wrap gap-2 mb-8 justify-center">
+            <button onclick="switchDept('physics')" class="dept-btn px-8 py-3 rounded-full bg-blue-600 text-white font-bold transition">الفيزياء</button>
+            <button onclick="switchDept('chemistry')" class="dept-btn px-8 py-3 rounded-full bg-white text-gray-600 hover:bg-gray-100 font-bold transition">الكيمياء</button>
+            <button onclick="switchDept('biology')" class="dept-btn px-8 py-3 rounded-full bg-white text-gray-600 hover:bg-gray-100 font-bold transition">الأحياء</button>
+            <button onclick="switchDept('science')" class="dept-btn px-8 py-3 rounded-full bg-white text-gray-600 hover:bg-gray-100 font-bold transition">العلوم العامّة</button>
+        </div>
+
+        <!-- Experiments Container -->
+        <div id="experiments-container" class="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <!-- Experiments will be rendered here -->
+        </div>
+    </main>
+
+    <!-- Modal for Simulation & Quiz -->
+    <div id="modal" class="fixed inset-0 z-50 hidden flex items-center justify-center bg-black bg-opacity-70 p-4">
+        <div class="bg-white w-full max-w-4xl max-h-[90vh] overflow-y-auto rounded-3xl relative">
+            <button onclick="closeModal()" class="absolute top-4 left-4 text-gray-500 hover:text-red-500 text-2xl">×</button>
+            <div id="modal-content" class="p-8"></div>
+        </div>
+    </div>
+
+    <!-- Certificate Template (Hidden) -->
+    <div id="certificate-template" class="hidden fixed inset-0 z-[60] bg-white flex flex-center items-center justify-center p-8">
+        <div class="border-[15px] border-double border-blue-900 p-12 text-center max-w-4xl w-full relative">
+            <div class="absolute top-8 right-8 text-right text-sm">
+                مجمع السحن<br>العام الدراسي 2026
+            </div>
+            <h1 class="text-5xl font-bold text-blue-900 mb-8">شهادة تميز</h1>
+            <p class="text-2xl mb-4">يشهد مختبر المستقبل الذكي بأن الطالب/ـة:</p>
+            <p id="cert-student-name" class="text-4xl font-bold text-blue-600 underline decoration-blue-200 mb-8">[الاسم]</p>
+            <p class="text-xl leading-relaxed mb-12">
+                قد اجتاز بنجاح كافة التجارب العلمية المقررة في أقسام الفيزياء والكيمياء والأحياء والعلوم، 
+                وأظهر مهارات تفكير عليا متميزة في التفاعل مع المختبرات الافتراضية.
+            </p>
+            <div class="grid grid-cols-3 gap-8 mt-12">
+                <div>
+                    <p class="font-bold">مديرة المدرسة</p>
+                    <p>هله النفيعي</p>
+                </div>
+                <div>
+                    <p class="font-bold">صاحبة المبادرة</p>
+                    <p>نوره المالكي / مشاعل الشريف</p>
+                </div>
+                <div>
+                    <p class="font-bold">التاريخ</p>
+                    <p>2026 م</p>
+                </div>
+            </div>
+            <button onclick="window.print()" class="mt-8 bg-blue-600 text-white px-6 py-2 rounded no-print">طباعة الشهادة</button>
+            <button onclick="closeCert()" class="mt-8 bg-gray-200 text-gray-800 px-6 py-2 rounded no-print mr-2">إغلاق</button>
+        </div>
+    </div>
+
+    <script>
+        let currentUser = "";
+        let currentDept = "physics";
+        let progress = JSON.parse(localStorage.getItem('labProgress')) || {
+            physics: [0, 0], // scores for exp1, exp2
+            chemistry: [0, 0],
+            biology: [0, 0],
+            science: [0, 0]
+        };
+
+        const data = {
+            physics: [
+                {
+                    id: 0,
+                    title: "قانون الجاذبية - السقوط الحر",
+                    desc: "دراسة تأثير كتلة الأجسام وسرعة سقوطها في الفراغ.",
+                    simType: "gravity",
+                    questions: [
+                        { q: "ماذا يحدث لسرعة الجسم عند إهمال مقاومة الهواء؟", a: ["تزداد بانتظام", "تقل بانتظام", "تبقى ثابتة", "تعتمد على الكتلة"], correct: 0 },
+                        { q: "تسارع الجاذبية الأرضية يساوي تقريباً:", a: ["5 m/s²", "9.8 m/s²", "1.6 m/s²", "20 m/s²"], correct: 1 },
+                        { q: "في الفراغ، ريشة ومطرقة يسقطان معاً:", a: ["تصل المطرقة أولاً", "تصل الريشة أولاً", "يصلان معاً", "لا يسقطان"], correct: 2 },
+                        { q: "القوة التي تسحب الأجسام للأسفل هي:", a: ["الكهرباء", "المغناطيسية", "الجاذبية", "الاحتكاك"], correct: 2 },
+                        { q: "إذا زادت الكتلة في الفراغ، هل يتغير التسارع؟", a: ["نعم يزداد", "نعم يقل", "لا يتغير", "ينعدم"], correct: 2 }
+                    ]
+                },
+                {
+                    id: 1,
+                    title: "الدوائر الكهربائية البسيطة",
+                    desc: "بناء دائرة كهربائية وقياس شدة التيار والجهد.",
+                    simType: "circuit",
+                    questions: [
+                        { q: "وحدة قياس شدة التيار الكهربائي هي:", a: ["الفولت", "الأوم", "الأمبير", "الواط"], correct: 2 },
+                        { q: "عند توصيل المصابيح على التوالي:", a: ["تزداد الإضاءة", "يقل التيار الكلي", "ينقطع التيار عن الكل إذا تلف واحد", "لا تتأثر"], correct: 2 },
+                        { q: "وظيفة البطارية في الدائرة هي:", a: ["استهلاك الطاقة", "توفير فرق الجهد", "قياس التيار", "حماية الدائرة"], correct: 1 },
+                        { q: "المادة الموصلة للكهرباء هي:", a: ["البلاستيك", "النحاس", "الخشب", "الزجاج"], correct: 1 },
+                        { q: "قانون أوم يربط بين:", a: ["الجهد والتيار والمقاومة", "السرعة والزمن", "الكتلة والحجم", "الحرارة والضغط"], correct: 0 }
+                    ]
+                }
+            ],
+            chemistry: [
+                {
+                    id: 0,
+                    title: "قياس الرقم الهيدروجيني pH",
+                    desc: "اختبار حموضة وقلوية المحاليل المختلفة باستخدام الكواشف.",
+                    simType: "ph",
+                    questions: [
+                        { q: "المحلول الذي قيمة pH له 2 يعتبر:", a: ["حمض قوي", "قاعدة قوية", "متعادل", "حمض ضعيف"], correct: 0 },
+                        { q: "الماء النقي متعادل وقيمة pH له تساوي:", a: ["0", "7", "14", "10"], correct: 1 },
+                        { q: "تتحول ورقة تباع الشمس للون الأزرق في:", a: ["الأحماض", "القواعد", "الماء", "الزيوت"], correct: 1 },
+                        { q: "محلول الصابون يعتبر:", a: ["حمضي", "قاعدي", "متعادل", "غازي"], correct: 1 },
+                        { q: "تستخدم الكواشف لـ:", a: ["زيادة التفاعل", "تحديد نوع المحلول", "تبريد المحلول", "تبخير الماء"], correct: 1 }
+                    ]
+                },
+                {
+                    id: 1,
+                    title: "تفاعلات الإحلال البسيط",
+                    desc: "مشاهدة تفاعل الفلزات مع الأحماض المخففة.",
+                    simType: "reaction",
+                    questions: [
+                        { q: "الغاز المتصاعد عند تفاعل الخارصين مع HCl هو:", a: ["الأكسجين", "النيتروجين", "الهيدروجين", "ثاني أكسيد الكربون"], correct: 2 },
+                        { q: "تعتبر هذه التفاعلات من نوع:", a: ["تفكك", "اتحاد", "إحلال بسيط", "احتراق"], correct: 2 },
+                        { q: "أي الفلزات أكثر نشاطاً؟", a: ["النحاس", "الصوديوم", "الفضة", "الذهب"], correct: 1 },
+                        { q: "العامل المساعد في التفاعل:", a: ["يستهلك", "لا يستهلك", "يغير النواتج", "يبرد الحرارة"], correct: 1 },
+                        { q: "الصيغة الكيميائية لحمض الهيدروكلوريك:", a: ["H2O", "NaOH", "HCl", "CO2"], correct: 2 }
+                    ]
+                }
+            ],
+            biology: [
+                {
+                    id: 0,
+                    title: "الخلية النباتية والحيوانية",
+                    desc: "فحص الأجزاء الداخلية للخلية تحت المجهر الافتراضي.",
+                    simType: "cell",
+                    questions: [
+                        { q: "الجزء الموجود في الخلية النباتية فقط:", a: ["النواة", "الجدار الخلوي", "الغشاء البلازمي", "السيتوبلازم"], correct: 1 },
+                        { q: "مركز التحكم في الخلية هو:", a: ["الميتوكوندريا", "الفجوة", "النواة", "الريبوسومات"], correct: 2 },
+                        { q: "يتم إنتاج الطاقة في:", a: ["النواة", "الميتوكوندريا", "البلاستيدات", "الجدار"], correct: 1 },
+                        { q: "البلاستيدات الخضراء مسؤولة عن:", a: ["التنفس", "البناء الضوئي", "الإخراج", "الحركة"], correct: 1 },
+                        { q: "وحدة بناء الكائن الحي هي:", a: ["العضو", "النسيج", "الخلية", "الجهاز"], correct: 2 }
+                    ]
+                },
+                {
+                    id: 1,
+                    title: "عملية البناء الضوئي",
+                    desc: "تأثير الضوء وCO2 على معدل إنتاج الأكسجين.",
+                    simType: "photosynthesis",
+                    questions: [
+                        { q: "الغاز الذي يحتاجه النبات للبناء الضوئي:", a: ["O2", "CO2", "N2", "H2"], correct: 1 },
+                        { q: "تحدث العملية في وجود:", a: ["الظلام", "ضوء الشمس", "الحرارة العالية", "الماء المالح"], correct: 1 },
+                        { q: "الصبغة الخضراء في النبات تسمى:", a: ["هيموجلوبين", "كلوروفيل", "ميلانين", "أنسولين"], correct: 1 },
+                        { q: "الناتج الرئيسي المفيد للإنسان هو:", a: ["الظل", "الأكسجين", "ثاني أكسيد الكربون", "التربة"], correct: 1 },
+                        { q: "تخزن النباتات الطاقة على شكل:", a: ["دهون", "نشأ/سكر", "بروتين", "أملاح"], correct: 1 }
+                    ]
+                }
+            ],
+            science: [
+                {
+                    id: 0,
+                    title: "حالات المادة",
+                    desc: "تأثير الحرارة على تحول المادة بين الصلابة والسيولة والغازية.",
+                    simType: "matter",
+                    questions: [
+                        { q: "تحول المادة من صلب إلى سائل يسمى:", a: ["تبخر", "تجمد", "انصهار", "تكثف"], correct: 2 },
+                        { q: "الجزيئات تكون متراصة جداً في الحالة:", a: ["الغازية", "السائلة", "الصلبة", "البلازما"], correct: 2 },
+                        { q: "التسامي هو تحول الصلب مباشرة إلى:", a: ["سائل", "غاز", "ثلج", "ماء"], correct: 1 },
+                        { q: "عند الغليان تزداد:", a: ["طاقة الحركة", "الكتلة", "الجاذبية", "الكثافة"], correct: 0 },
+                        { q: "المادة التي لها حجم ثابت وشكل متغير:", a: ["الحديد", "الماء", "البخار", "الخشب"], correct: 1 }
+                    ]
+                },
+                {
+                    id: 1,
+                    title: "دورة الماء في الطبيعة",
+                    desc: "محاكاة لعمليات التبخر والتكثف والهطول.",
+                    simType: "watercycle",
+                    questions: [
+                        { q: "المصدر الرئيسي للطاقة في دورة الماء:", a: ["الرياح", "الشمس", "القمر", "البراكين"], correct: 1 },
+                        { q: "سقوط المطر أو الثلج يسمى:", a: ["تبخراً", "تكثفاً", "هطولاً", "جرياناً"], correct: 2 },
+                        { q: "تحول البخار إلى قطرات ماء في السحب:", a: ["انصهار", "تبخر", "تكثف", "تسامي"], correct: 2 },
+                        { q: "أين توجد معظم المياه العذبة؟", a: ["المحيطات", "الكتل الجليدية", "الأنهار", "الآبار"], correct: 1 },
+                        { q: "عملية خروج الماء من أوراق النبات:", a: ["التنفس", "النتح", "الهضم", "الامتصاص"], correct: 1 }
+                    ]
+                }
+            ]
+        };
+
+        function startJourney() {
+            const name = document.getElementById('student-name-input').value;
+            if (name.length < 3) return alert("يرجى إدخال اسمك الكريم");
+            currentUser = name;
+            document.getElementById('auth-overlay').style.display = 'none';
+            document.getElementById('display-name').innerText = "أهلاً، " + name;
+            renderExperiments();
+        }
+
+        function switchDept(dept) {
+            currentDept = dept;
+            document.querySelectorAll('.dept-btn').forEach(btn => {
+                btn.classList.replace('bg-blue-600', 'bg-white');
+                btn.classList.replace('text-white', 'text-gray-600');
+            });
+            event.target.classList.replace('bg-white', 'bg-blue-600');
+            event.target.classList.replace('text-gray-600', 'text-white');
+            renderExperiments();
+        }
+
+        function renderExperiments() {
+            const container = document.getElementById('experiments-container');
+            container.innerHTML = "";
+            
+            data[currentDept].forEach((exp, index) => {
+                const isLocked = index > 0 && progress[currentDept][index-1] < 70;
+                const score = progress[currentDept][index];
+                
+                const card = document.createElement('div');
+                card.className = `lab-card glass p-6 rounded-2xl border-2 ${isLocked ? 'locked' : 'border-blue-100 hover:border-blue-400'}`;
+                card.innerHTML = `
+                    <div class="flex justify-between items-start mb-4">
+                        <span class="bg-blue-100 text-blue-800 text-xs font-bold px-2.5 py-0.5 rounded">التجربة ${index + 1}</span>
+                        ${score > 0 ? `<span class="text-green-600 font-bold">الدرجة: ${score}%</span>` : ''}
+                    </div>
+                    <h3 class="text-xl font-bold mb-2">${exp.title}</h3>
+                    <p class="text-gray-600 text-sm mb-6">${exp.desc}</p>
+                    <button ${isLocked ? 'disabled' : ''} onclick="openExperiment(${index})" 
+                        class="w-full py-2 rounded-xl font-bold transition ${isLocked ? 'bg-gray-300' : 'bg-blue-600 text-white hover:bg-blue-700'}">
+                        ${isLocked ? 'مغلق (أكمل التجربة السابقة بنجاح)' : 'بدء التجربة'}
+                    </button>
+                `;
+                container.appendChild(card);
+            });
+            checkOverallProgress();
+        }
+
+        function openExperiment(idx) {
+            const exp = data[currentDept][idx];
+            const modal = document.getElementById('modal');
+            const content = document.getElementById('modal-content');
+            
+            content.innerHTML = `
+                <div class="text-center mb-8">
+                    <h2 class="text-3xl font-bold text-blue-900 mb-2">${exp.title}</h2>
+                    <p class="text-gray-600">${exp.desc}</p>
+                </div>
+
+                <div class="bg-blue-50 p-6 rounded-2xl mb-8 border-2 border-dashed border-blue-200 min-h-[300px] flex flex-col items-center justify-center">
+                    <p class="mb-4 font-bold text-blue-800">المختبر الافتراضي التفاعلي</p>
+                    <div id="sim-area" class="w-full max-w-md bg-white p-4 rounded-xl shadow-inner text-center">
+                        ${getSimUI(exp.simType)}
+                    </div>
+                </div>
+
+                <div id="quiz-area" class="space-y-8">
+                    <h3 class="text-xl font-bold border-r-4 border-blue-600 pr-3">اختبار مهارات التفكير العليا</h3>
+                    ${exp.questions.map((q, qIdx) => `
+                        <div class="bg-gray-50 p-6 rounded-xl">
+                            <p class="font-bold mb-4">${qIdx + 1}. ${q.q}</p>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                ${q.a.map((opt, oIdx) => `
+                                    <button onclick="checkAnswer(${idx}, ${qIdx}, ${oIdx}, this)" 
+                                        class="text-right p-3 rounded-lg border bg-white hover:bg-blue-50 transition">
+                                        ${opt}
+                                    </button>
+                                `).join('')}
+                            </div>
+                        </div>
+                    `).join('')}
+                    <button onclick="submitQuiz(${idx})" class="w-full btn-gradient text-white py-4 rounded-xl font-bold text-xl">إنهاء التجربة ورصد الدرجة</button>
+                </div>
+            `;
+            modal.classList.remove('hidden');
+        }
+
+        function getSimUI(type) {
+            // Mock interactive UI based on type
+            switch(type) {
+                case 'gravity': return `<div class='space-y-4'><div id='ball' class='w-12 h-12 bg-red-500 rounded-full mx-auto relative top-0 transition-all duration-1000'></div><button onclick="document.getElementById('ball').style.top='150px'; setTimeout(()=>document.getElementById('ball').style.top='0', 2000)" class='bg-gray-800 text-white px-4 py-1 rounded'>إسقاط الكرة</button></div>`;
+                case 'ph': return `<input type='range' oninput="this.nextElementSibling.innerText = this.value; this.parentElement.style.backgroundColor = this.value < 7 ? '#fee2e2' : '#dcfce7'" min='0' max='14' value='7' class='w-full'> <span class='font-bold'>7</span> <p class='text-xs mt-2'>حرك المؤشر لتغيير درجة الحموضة</p>`;
+                case 'circuit': return `<div class='flex gap-4 items-center justify-center'><div id='lamp' class='w-10 h-10 bg-gray-200 rounded-full border-2'></div> <button onclick="const l=document.getElementById('lamp'); l.classList.toggle('bg-yellow-400'); l.classList.toggle('shadow-[0_0_20px_rgba(250,204,21,0.8)]')" class='p-2 bg-blue-500 text-white rounded'>مفتاح التشغيل</button></div>`;
+                default: return `<p class='text-blue-400 italic'>جاري تحميل المحاكاة ثلاثية الأبعاد...</p>`;
+            }
+        }
+
+        let currentQuizAnswers = [];
+        function checkAnswer(expIdx, qIdx, oIdx, btn) {
+            const correct = data[currentDept][expIdx].questions[qIdx].correct;
+            const buttons = btn.parentElement.querySelectorAll('button');
+            buttons.forEach(b => b.disabled = true);
+            
+            if (oIdx === correct) {
+                btn.classList.add('bg-green-100', 'border-green-500', 'text-green-700');
+                currentQuizAnswers[qIdx] = true;
+                confetti({ particleCount: 50, spread: 30, origin: { y: 0.7 } });
+                // Play success sound (mock)
+            } else {
+                btn.classList.add('bg-red-100', 'border-red-500', 'text-red-700');
+                buttons[correct].classList.add('bg-green-100', 'border-green-200');
+                currentQuizAnswers[qIdx] = false;
+            }
+        }
+
+        function submitQuiz(expIdx) {
+            const correctCount = currentQuizAnswers.filter(a => a === true).length;
+            const score = (correctCount / 5) * 100;
+            
+            progress[currentDept][expIdx] = score;
+            localStorage.setItem('labProgress', JSON.stringify(progress));
+            
+            alert(`انتهيت من التجربة! درجتك هي: ${score}%`);
+            currentQuizAnswers = [];
+            closeModal();
+            renderExperiments();
+        }
+
+        function closeModal() {
+            document.getElementById('modal').classList.add('hidden');
+        }
+
+        function showDashboard() {
+            const dash = document.getElementById('dashboard');
+            dash.classList.toggle('hidden');
+            const grid = document.getElementById('stats-grid');
+            grid.innerHTML = "";
+            
+            Object.keys(progress).forEach(dept => {
+                const avg = (progress[dept][0] + progress[dept][1]) / 2;
+                grid.innerHTML += `
+                    <div class="bg-white p-4 rounded-xl shadow-sm border border-blue-50">
+                        <p class="text-sm text-gray-500">${dept === 'physics' ? 'الفيزياء' : dept === 'chemistry' ? 'الكيمياء' : dept === 'biology' ? 'الأحياء' : 'العلوم'}</p>
+                        <p class="text-2xl font-bold text-blue-600">${avg}%</p>
+                        <div class="w-full bg-gray-200 h-2 mt-2 rounded-full">
+                            <div class="bg-blue-500 h-2 rounded-full" style="width: ${avg}%"></div>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        function checkOverallProgress() {
+            let totalTasks = 8; // 4 depts * 2 exps
+            let completed = 0;
+            Object.values(progress).forEach(deptScores => {
+                deptScores.forEach(s => { if(s >= 70) completed++; });
+            });
+
+            if (completed >= 4) { // Let's say pass half to get cert or all
+                document.getElementById('cert-nav').classList.remove('hidden');
+            }
+        }
+
+        function showCertificate() {
+            document.getElementById('cert-student-name').innerText = currentUser;
+            document.getElementById('certificate-template').classList.remove('hidden');
+        }
+
+        function closeCert() {
+            document.getElementById('certificate-template').classList.add('hidden');
+        }
+    </script>
+</body>
+</html>" role="tooltip">تصميم موقع تعليمي تفاعلي للمبادرة</div><div id="cdk-describedby-message-ng-1-357" role="tooltip">توسيع النص</div><div id="cdk-describedby-message-ng-1-360" role="tooltip">توسيع القائمة</div><div id="cdk-describedby-message-ng-1-361" role="tooltip">تم حفظ التغييرات</div><div id="cdk-describedby-message-ng-1-362" role="tooltip">إغلاق</div><div id="cdk-describedby-message-ng-1-364" role="tooltip">محادثة جديدة (Ctrl+Shift+O)</div><div id="cdk-describedby-message-ng-1-365" role="tooltip">الإعدادات والمساعدة</div><div id="cdk-describedby-message-ng-1-367" role="tooltip">اختيار مربّع وطرح سؤال</div><div id="cdk-describedby-message-ng-1-368" role="tooltip">نسخ الرد</div><div id="cdk-describedby-message-ng-1-369" role="tooltip">المزيد</div><div id="cdk-describedby-message-ng-1-374" role="tooltip">تعديل الطلب</div></div><iframe src="./المستفل_files/bscframe.html" style="display: none;"></iframe><div class="cdk-overlay-container"></div><div class="monaco-aria-container"><div class="monaco-alert" role="alert" aria-atomic="true"></div><div class="monaco-alert" role="alert" aria-atomic="true"></div><div class="monaco-status" aria-live="polite" aria-atomic="true"></div><div class="monaco-status" aria-live="polite" aria-atomic="true"></div></div></body></html>
